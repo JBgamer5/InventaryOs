@@ -20,7 +20,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -33,13 +32,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.client.android.Intents
-import com.google.zxing.integration.android.IntentIntegrator
-import com.inventaryos.MainActivity
 import com.inventaryos.R
 import com.inventaryos.ui.theme.*
-import com.journeyapps.barcodescanner.CaptureActivity
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
@@ -326,7 +320,7 @@ private fun ItemPreview() {
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(if (imageUri.isBlank()) R.drawable.ic_upload_img else imageUri)
+                    .data(imageUri.ifBlank { R.drawable.ic_upload_img })
                     .placeholder(R.drawable.ic_upload_img)
                     .build(),
                 contentDescription = "image_product",
@@ -341,7 +335,7 @@ private fun ItemPreview() {
                     .background(if (isSystemInDarkTheme()) greenLight else cian)
             ) {
                 Text(
-                    text = if (tittle.isBlank()) "Sin nombre" else tittle,
+                    text = tittle.ifBlank { "Sin nombre" },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isSystemInDarkTheme()) darkMode else lightMode,

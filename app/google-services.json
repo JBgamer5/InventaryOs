@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "505080832309",
+    "project_id": "inventaryos",
+    "storage_bucket": "inventaryos.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:505080832309:android:39b23c2b5661ebca03ac7c",
+        "android_client_info": {
+          "package_name": "com.inventaryos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "505080832309-f2obstntigfemu6mot78gavo47q8j4st.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.inventaryos",
+            "certificate_hash": "c22642c9164a53802565b71119f44955a0e2a974"
+          }
+        },
+        {
+          "client_id": "505080832309-9g14fkthue9ped1kjhd020f8nsp5oeos.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzv3bvAXUbNmHcfuMUvxJ1BraEu51hKiw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "505080832309-9g14fkthue9ped1kjhd020f8nsp5oeos.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
