@@ -30,9 +30,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.inventaryos.R
+import com.inventaryos.ui.common.LoadingScreen
 import com.inventaryos.ui.theme.*
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -44,17 +46,14 @@ private fun Preview() {
     AddItemView()
 }
 
-var tittle by mutableStateOf("")
-var imageUri by mutableStateOf("")
-var barCode by mutableStateOf("")
-var quantity by mutableStateOf(0)
-
 @Composable
-fun AddItemView() {
+fun AddItemView(viewModel: AddItemViewModel = hiltViewModel()) {
+    val context = LocalContext.current
+    LoadingScreen(isLoading = viewModel.isLoading)
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /*TODO*/ },
+                onClick = { viewModel.save(context) },
                 backgroundColor = if (isSystemInDarkTheme()) greenLight else cian,
                 modifier = Modifier
                     .size(70.dp)
@@ -68,12 +67,12 @@ fun AddItemView() {
                 )
             }
         }) {
-        Content(it)
+        Content(it, viewModel)
     }
 }
 
 @Composable
-private fun Content(paddingValues: PaddingValues) {
+private fun Content(paddingValues: PaddingValues, viewModel: AddItemViewModel) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -89,7 +88,7 @@ private fun Content(paddingValues: PaddingValues) {
             color = if (isSystemInDarkTheme()) greenLight else cian
         )
         Spacer(modifier = Modifier.height(10.dp))
-        ItemPreview()
+        ItemPreview(viewModel)
         Spacer(modifier = Modifier.height(40.dp))
         LazyColumn(
             horizontalAlignment = Alignment.CenterHorizontally
@@ -102,8 +101,8 @@ private fun Content(paddingValues: PaddingValues) {
                         .padding(top = 10.dp, bottom = 15.dp)
                 ) {
                     TextField(
-                        value = tittle,
-                        onValueChange = { tittle = it },
+                        value = viewModel.tittle,
+                        onValueChange = { viewModel.tittle = it },
                         placeholder = {
                             Text(text = "Escriba el nombre")
                         },
@@ -129,7 +128,10 @@ private fun Content(paddingValues: PaddingValues) {
                         .width(230.dp)
                 ) {
                     Button(
-                        onClick = { if (quantity > 0) quantity = quantity.minus(1) },
+                        onClick = {
+                            if (viewModel.quantity > 0) viewModel.quantity =
+                                viewModel.quantity.minus(1)
+                        },
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = red
@@ -155,10 +157,10 @@ private fun Content(paddingValues: PaddingValues) {
                             .padding(top = 10.dp, bottom = 15.dp)
                     ) {
                         TextField(
-                            value = "$quantity",
+                            value = "${viewModel.quantity}",
                             onValueChange = {
-                                if (it.isDigitsOnly() && it.isNotEmpty() && it.length < 9) quantity =
-                                    it.toInt() else if (it.isEmpty()) quantity = 0
+                                if (it.isDigitsOnly() && it.isNotEmpty() && it.length < 9) viewModel.quantity =
+                                    it.toInt() else if (it.isEmpty()) viewModel.quantity = 0
                             },
                             colors = TextFieldDefaults.textFieldColors(
                                 backgroundColor = if (isSystemInDarkTheme()) black else lightMode,
@@ -188,7 +190,7 @@ private fun Content(paddingValues: PaddingValues) {
                         )
                     }
                     Button(
-                        onClick = { quantity = quantity.plus(1) },
+                        onClick = { viewModel.quantity = viewModel.quantity.plus(1) },
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = jade
@@ -215,7 +217,7 @@ private fun Content(paddingValues: PaddingValues) {
                     contract = ActivityResultContracts.PickVisualMedia(),
                     onResult = { uri ->
                         if (uri != null) {
-                            imageUri = uri.toString()
+                            viewModel.imageUri = uri.toString()
                         }
                     }
                 )
@@ -248,7 +250,7 @@ private fun Content(paddingValues: PaddingValues) {
                             .padding(top = 10.dp, bottom = 15.dp)
                     ) {
                         TextField(
-                            value = barCode,
+                            value = viewModel.barCode,
                             onValueChange = {},
                             placeholder = {
                                 Text(text = "Presione el boton de escanear")
@@ -271,7 +273,7 @@ private fun Content(paddingValues: PaddingValues) {
                             contract = ScanContract(),
                             onResult = { result ->
                                 if (!result.contents.isNullOrEmpty()) {
-                                    barCode = result.contents
+                                    viewModel.barCode = result.contents
                                 }
                             })
                     Button(
@@ -304,7 +306,7 @@ private fun Content(paddingValues: PaddingValues) {
 }
 
 @Composable
-private fun ItemPreview() {
+private fun ItemPreview(viewModel: AddItemViewModel) {
     Card(
         backgroundColor = if (isSystemInDarkTheme()) black else lightMode,
         elevation = 13.dp,
@@ -320,7 +322,7 @@ private fun ItemPreview() {
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageUri.ifBlank { R.drawable.ic_upload_img })
+                    .data(viewModel.imageUri.ifBlank { R.drawable.ic_upload_img })
                     .placeholder(R.drawable.ic_upload_img)
                     .build(),
                 contentDescription = "image_product",
@@ -335,7 +337,7 @@ private fun ItemPreview() {
                     .background(if (isSystemInDarkTheme()) greenLight else cian)
             ) {
                 Text(
-                    text = tittle.ifBlank { "Sin nombre" },
+                    text = viewModel.tittle.ifBlank { "Sin nombre" },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isSystemInDarkTheme()) darkMode else lightMode,
@@ -359,7 +361,7 @@ private fun ItemPreview() {
                         .padding(horizontal = 10.dp)
                 ) {
                     Text(
-                        text = "$quantity",
+                        text = "${viewModel.quantity}",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontSize = 18.sp,
