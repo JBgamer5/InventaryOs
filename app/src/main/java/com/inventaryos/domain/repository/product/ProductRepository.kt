@@ -10,6 +10,8 @@ import dagger.hilt.android.components.ViewModelComponent
 
 interface ProductRepository {
     suspend fun addProduct(product: Product, uri: Uri): Boolean
+    suspend fun getProducts(): List<Product>
+    suspend fun getImage(prodId: String): Any?
 }
 
 @Module

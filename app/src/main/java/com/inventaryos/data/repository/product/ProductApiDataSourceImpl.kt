@@ -27,4 +27,22 @@ class ProductApiDataSourceImpl @Inject constructor(
         }
     }
 
+    override suspend fun getProducts(): List<ProductApiEntity> {
+        return try {
+            firestore.collection(FirebaseConstants.Productos.route).get().await().toObjects(ProductApiEntity::class.java)
+        }catch (e: java.lang.Exception){
+            Log.d("ProductApiDataSource", e.toString())
+            emptyList()
+        }
+    }
+
+    override suspend fun getImage(prodId: String): Any? {
+        return try {
+            storage.reference.child(FirebaseConstants.Imagenes.route).child(prodId).downloadUrl.await()
+        }catch (e: java.lang.Exception){
+            Log.d("ProductApiDataSource", e.toString())
+            null
+        }
+    }
+
 }

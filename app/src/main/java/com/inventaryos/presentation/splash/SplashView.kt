@@ -12,23 +12,35 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.inventaryos.R
+import com.inventaryos.ui.navigation.AppScreenNavigation
 import com.inventaryos.ui.theme.*
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 
 @Preview(uiMode = UI_MODE_NIGHT_NO, showSystemUi = true)
 @Preview(uiMode = UI_MODE_NIGHT_YES, showSystemUi = true)
 @Composable
 private fun Preview() {
-    SplashView()
+    val navController = rememberNavController()
+    SplashView(navController)
 }
 
 @Composable
-fun SplashView() {
+fun SplashView(navController: NavHostController) {
+    LaunchedEffect(Unit) {
+        delay(2500)
+        navController.popBackStack()
+        navController.navigate(AppScreenNavigation.Main.route)
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()

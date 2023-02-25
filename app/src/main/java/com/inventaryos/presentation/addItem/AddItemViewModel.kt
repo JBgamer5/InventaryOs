@@ -8,8 +8,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.inventaryos.domain.model.Product
 import com.inventaryos.domain.usecase.product.AddProduct
+import com.inventaryos.ui.navigation.AppScreenNavigation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -39,6 +41,10 @@ class AddItemViewModel @Inject constructor(
             }
             isLoading = false
         }
+    }
+
+    fun navigateToMain(navController: NavController){
+        navController.popBackStack()
     }
 
     private fun clear(){

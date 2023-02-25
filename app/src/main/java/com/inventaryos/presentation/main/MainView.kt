@@ -1,117 +1,224 @@
 package com.inventaryos.presentation.main
 
 import android.content.res.Configuration
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.RemoveCircleOutline
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.inventaryos.R
+import com.inventaryos.domain.model.Product
 import com.inventaryos.ui.theme.*
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.runBlocking
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, showSystemUi = true)
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showSystemUi = true)
 @Composable
 private fun Preview() {
-    MainView()
+    val navController = rememberNavController()
+    MainView(navController)
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun MainView() {
-    Scaffold(
-        topBar = {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+fun MainView(navController: NavController, viewModel: MainViewModel = hiltViewModel()) {
+    var isFirstView by remember {
+        mutableStateOf(true)
+    }
+    LaunchedEffect(key1 = isFirstView) {
+        viewModel.loadProducts()
+        isFirstView = false
+    }
+    if (viewModel.prodSelected.size != 0) {
+        GetDetails(product = viewModel.prodSelected[0], viewModel)
+    }
+    Scaffold(topBar = {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "InventaryOs",
+                fontSize = 55.sp,
+                fontFamily = Lobster,
+                color = if (isSystemInDarkTheme()) greenLight else cian
+            )
+            Box(
+                contentAlignment = Alignment.CenterEnd,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(end = 25.dp)
             ) {
-                Text(
-                    text = "InventaryOs",
-                    fontSize = 55.sp,
-                    fontFamily = Lobster,
-                    color = if (isSystemInDarkTheme()) greenLight else cian
-                )
-                Box(
-                    contentAlignment = Alignment.CenterEnd,
+                val scanLauncher =
+                    rememberLauncherForActivityResult(
+                        contract = ScanContract(),
+                        onResult = { result ->
+                            if (!result.contents.isNullOrEmpty()) {
+                                viewModel.prodSearch = result.contents
+                            }
+                        })
+                Button(
+                    onClick = {
+                        if (viewModel.prodSearch.isBlank()) {
+                            scanLauncher.launch(
+                                ScanOptions().setPrompt("Acerque el codigo de barras")
+                                    .setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
+                            )
+                        } else {
+                            viewModel.removeSearch()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color.Unspecified
+                    ),
+                    elevation = ButtonDefaults.elevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp
+                    ),
+                    contentPadding = PaddingValues(0.dp),
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 25.dp)
+                        .size(35.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Search,
+                        imageVector = if (viewModel.prodSearch.isBlank()) Icons.Filled.Search else Icons.Filled.Close,
                         contentDescription = "ic_search",
-                        modifier = Modifier
-                            .size(35.dp),
+                        modifier = Modifier.size(35.dp),
                         tint = if (isSystemInDarkTheme()) lightMode else darkMode
                     )
                 }
             }
-        },
-        backgroundColor = if (isSystemInDarkTheme()) darkMode else lightMode
+        }
+    }, floatingActionButton = {
+        FloatingActionButton(
+            onClick = {
+                viewModel.navigateToAddItem(navController)
+            },
+            backgroundColor = if (isSystemInDarkTheme()) greenLight else cian
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = "ic_add_product",
+                tint = if (isSystemInDarkTheme()) darkMode else lightMode,
+                modifier = Modifier
+                    .size(20.dp)
+            )
+        }
+    }, backgroundColor = if (isSystemInDarkTheme()) darkMode else lightMode
     ) {
-        LazyColumn(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+        val state = rememberPullRefreshState(
+            refreshing = viewModel.isLoading,
+            onRefresh = {
+                if (!viewModel.isSearching) {
+                    viewModel.loadProducts()
+                }
+            })
+        Box(
             modifier = Modifier
                 .padding(it)
-                .fillMaxSize()
+                .pullRefresh(state)
         ) {
-            items(10) {
-                Item()
+            LazyColumn(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                items(viewModel.products) { item ->
+                    Item(item, viewModel)
+                }
             }
+            if (viewModel.products.isEmpty()) {
+                Text(
+                    text = "No se ha añadido ningún producto aún",
+                    color = if (isSystemInDarkTheme()) lightMode else darkMode,
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                )
+            }
+            PullRefreshIndicator(
+                refreshing = true,
+                state = state,
+                backgroundColor = if (isSystemInDarkTheme()) darkMode else lightMode,
+                contentColor = if (isSystemInDarkTheme()) greenLight else cian,
+                scale = true,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+            )
         }
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
-private fun Item() {
+private fun Item(product: Product, viewModel: MainViewModel) {
     var isLongPress by remember {
         mutableStateOf(false)
     }
-    Card(
-        backgroundColor = if (isSystemInDarkTheme()) black else lightMode,
+    Card(backgroundColor = if (isSystemInDarkTheme()) black else lightMode,
         elevation = 13.dp,
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .padding(top = 10.dp)
             .size(250.dp, 180.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = {
-                        isLongPress = !isLongPress
-                    }
-                )
-            }
-    ) {
+            .combinedClickable(
+                onClick = {
+                    viewModel.selectProduct(product)
+                },
+                onLongClick = {
+                    isLongPress = !isLongPress
+                }
+            )) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxSize()
+            horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.example),
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(
+                        runBlocking {
+                            viewModel.getProdImg(product.id_prod)
+                        }
+                    )
+                    .placeholder(R.drawable.ic_upload_img)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = "image_product",
                 modifier = Modifier
                     .fillMaxWidth()
@@ -124,12 +231,11 @@ private fun Item() {
                     .background(if (isSystemInDarkTheme()) greenLight else cian)
             ) {
                 Text(
-                    text = "Camiseta",
+                    text = product.nombre,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isSystemInDarkTheme()) darkMode else lightMode,
-                    modifier = Modifier
-                        .align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center)
                 )
             }
         }
@@ -144,11 +250,10 @@ private fun Item() {
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp)
+                    modifier = Modifier.padding(horizontal = 10.dp)
                 ) {
                     Text(
-                        text = "1",
+                        text = "${product.cantidad}",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontSize = 18.sp,
@@ -166,22 +271,86 @@ private fun Item() {
                 enter = scaleIn(),
                 exit = scaleOut()
             ) {
-                Button(
-                    onClick = { /*TODO*/ },
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = red
-                    ),
-                    modifier = Modifier
-                        .size(35.dp),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.RemoveCircleOutline,
-                        contentDescription = "ic_delete_item",
-                        tint = lightMode
-                    )
+                Column {
+                    Button(
+                        onClick = { /*TODO*/ },
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = red
+                        ),
+                        modifier = Modifier.size(35.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.RemoveCircleOutline,
+                            contentDescription = "ic_delete_item",
+                            tint = lightMode
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(50.dp))
+                    Button(
+                        onClick = { /*TODO*/ },
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = jade
+                        ),
+                        modifier = Modifier.size(35.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = "ic_edit_item",
+                            tint = lightMode
+                        )
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GetDetails(product: Product, viewModel: MainViewModel) {
+    Dialog(onDismissRequest = {
+        viewModel.unSelectedProduct()
+    }) {
+        Surface(
+            shape = RoundedCornerShape(15.dp),
+            color = if (isSystemInDarkTheme()) darkMode else lightMode,
+            modifier = Modifier.size(200.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = product.nombre,
+                    fontSize = 23.sp,
+                    color = if (isSystemInDarkTheme()) greenLight else cian
+                )
+                Divider(
+                    color = if (isSystemInDarkTheme()) greenLight else cian,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(horizontal = 15.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Unidades Disponibles",
+                    color = if (isSystemInDarkTheme()) lightMode else darkMode
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "${product.cantidad}",
+                    color = if (isSystemInDarkTheme()) lightMode else darkMode
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Codigo de Barras",
+                    color = if (isSystemInDarkTheme()) lightMode else darkMode
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = product.id_prod,
+                    color = if (isSystemInDarkTheme()) lightMode else darkMode
+                )
             }
         }
     }

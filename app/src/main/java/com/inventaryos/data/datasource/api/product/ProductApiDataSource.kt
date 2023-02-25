@@ -11,6 +11,8 @@ import dagger.hilt.android.components.ViewModelComponent
 interface ProductApiDataSource {
 
     suspend fun addProduct(productApiEntity: ProductApiEntity, uri: Uri): Boolean
+    suspend fun getProducts(): List<ProductApiEntity>
+    suspend fun getImage(prodId: String): Any?
 
 }
 

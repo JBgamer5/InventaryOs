@@ -101,4 +101,7 @@ dependencies {
     //coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4"
+
+    //material dark theme
+    implementation("com.google.android.material:material:1.8.0")
 }

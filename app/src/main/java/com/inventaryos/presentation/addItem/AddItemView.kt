@@ -1,6 +1,7 @@
 package com.inventaryos.presentation.addItem
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.inventaryos.R
@@ -43,12 +46,16 @@ import com.journeyapps.barcodescanner.ScanOptions
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showSystemUi = true)
 @Composable
 private fun Preview() {
-    AddItemView()
+    val navController = rememberNavController()
+    AddItemView(navController)
 }
 
 @Composable
-fun AddItemView(viewModel: AddItemViewModel = hiltViewModel()) {
+fun AddItemView(navController: NavController, viewModel: AddItemViewModel = hiltViewModel()) {
     val context = LocalContext.current
+    BackHandler {
+        viewModel.navigateToMain(navController)
+    }
     LoadingScreen(isLoading = viewModel.isLoading)
     Scaffold(
         floatingActionButton = {
@@ -102,7 +109,7 @@ private fun Content(paddingValues: PaddingValues, viewModel: AddItemViewModel) {
                 ) {
                     TextField(
                         value = viewModel.tittle,
-                        onValueChange = { viewModel.tittle = it },
+                        onValueChange = { viewModel.tittle = it.uppercase() },
                         placeholder = {
                             Text(text = "Escriba el nombre")
                         },
@@ -338,6 +345,7 @@ private fun ItemPreview(viewModel: AddItemViewModel) {
             ) {
                 Text(
                     text = viewModel.tittle.ifBlank { "Sin nombre" },
+                    overflow = TextOverflow.Ellipsis,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isSystemInDarkTheme()) darkMode else lightMode,
