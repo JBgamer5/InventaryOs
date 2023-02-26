@@ -14,9 +14,10 @@ import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.inventaryos.presentation.addItem.AddItemView
+import com.inventaryos.presentation.addProduct.AddItemView
 import com.inventaryos.presentation.main.MainView
 import com.inventaryos.presentation.splash.SplashView
+import com.inventaryos.presentation.updateProduct.UpdateProductView
 import com.inventaryos.ui.navigation.AppScreenNavigation
 import com.inventaryos.ui.theme.InventaryOsTheme
 import com.inventaryos.ui.theme.darkMode
@@ -71,12 +72,18 @@ private fun Content() {
                     AppScreenNavigation.AddProduct.route -> slideOutVertically(tween(1000)) {
                         -it
                     }
+                    AppScreenNavigation.UpdateProduct.route -> slideOutHorizontally(tween(1000)) {
+                        -it
+                    }
                     else -> null
                 }
             },
             popEnterTransition = {
                 when (initialState.destination.route) {
                     AppScreenNavigation.AddProduct.route -> slideInVertically(tween(1000)) {
+                        -it
+                    }
+                    AppScreenNavigation.UpdateProduct.route -> slideInHorizontally(tween(1000)) {
                         -it
                     }
                     else -> null
@@ -89,7 +96,7 @@ private fun Content() {
             AppScreenNavigation.AddProduct.route,
             popExitTransition = {
                 when (targetState.destination.route) {
-                    AppScreenNavigation.Main.route -> slideOutVertically (tween(1000)){
+                    AppScreenNavigation.Main.route -> slideOutVertically(tween(1000)) {
                         it
                     }
                     else -> null
@@ -97,7 +104,7 @@ private fun Content() {
             },
             enterTransition = {
                 when (initialState.destination.route) {
-                    AppScreenNavigation.Main.route -> slideInVertically (tween(1000)){
+                    AppScreenNavigation.Main.route -> slideInVertically(tween(1000)) {
                         it
                     }
                     else -> null
@@ -105,6 +112,30 @@ private fun Content() {
             }
         ) {
             AddItemView(navController)
+        }
+        composable(
+            "${AppScreenNavigation.UpdateProduct.route}/{prodId}",
+            popExitTransition = {
+                when (targetState.destination.route) {
+                    AppScreenNavigation.Main.route -> slideOutHorizontally(tween(1000)) {
+                        it
+                    }
+                    else -> null
+                }
+            },
+            enterTransition = {
+                when (initialState.destination.route) {
+                    AppScreenNavigation.Main.route -> slideInHorizontally(tween(1000)) {
+                        it
+                    }
+                    else -> null
+                }
+            }
+        ) {
+            UpdateProductView(
+                it.arguments?.getString("prodId") ?: "",
+                navController = navController
+            )
         }
     }
 }

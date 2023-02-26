@@ -24,4 +24,16 @@ class ProductRepositoryImpl @Inject constructor(
         return productApiDataSource.getImage(prodId)
     }
 
+    override suspend fun delProduct(prodId: String): Boolean {
+        return productApiDataSource.delProduct(prodId)
+    }
+
+    override suspend fun getProdById(prodId: String): Product? {
+        return productApiDataSource.getProdById(prodId)?.toProduct()
+    }
+
+    override suspend fun updateProd(product: Product, uri: Uri): Boolean {
+        return productApiDataSource.updateProd(product.toProductApiEntity(), uri)
+    }
+
 }

@@ -9,7 +9,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,9 +25,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -57,15 +56,8 @@ private fun Preview() {
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun MainView(navController: NavController, viewModel: MainViewModel = hiltViewModel()) {
-    var isFirstView by remember {
-        mutableStateOf(true)
-    }
-    LaunchedEffect(key1 = isFirstView) {
+    LaunchedEffect(Unit) {
         viewModel.loadProducts()
-        isFirstView = false
-    }
-    if (viewModel.prodSelected.size != 0) {
-        GetDetails(product = viewModel.prodSelected[0], viewModel)
     }
     Scaffold(topBar = {
         Column(
@@ -89,18 +81,18 @@ fun MainView(navController: NavController, viewModel: MainViewModel = hiltViewMo
                         contract = ScanContract(),
                         onResult = { result ->
                             if (!result.contents.isNullOrEmpty()) {
-                                viewModel.prodSearch = result.contents
+                                viewModel.searchProduct(result.contents)
                             }
                         })
                 Button(
                     onClick = {
-                        if (viewModel.prodSearch.isBlank()) {
+                        if (!viewModel.isSearching) {
                             scanLauncher.launch(
                                 ScanOptions().setPrompt("Acerque el codigo de barras")
                                     .setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
                             )
                         } else {
-                            viewModel.removeSearch()
+                            viewModel.loadProducts()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -115,7 +107,7 @@ fun MainView(navController: NavController, viewModel: MainViewModel = hiltViewMo
                         .size(35.dp)
                 ) {
                     Icon(
-                        imageVector = if (viewModel.prodSearch.isBlank()) Icons.Filled.Search else Icons.Filled.Close,
+                        imageVector = if (!viewModel.isSearching) Icons.Filled.Search else Icons.Filled.Close,
                         contentDescription = "ic_search",
                         modifier = Modifier.size(35.dp),
                         tint = if (isSystemInDarkTheme()) lightMode else darkMode
@@ -159,7 +151,7 @@ fun MainView(navController: NavController, viewModel: MainViewModel = hiltViewMo
                     .fillMaxSize()
             ) {
                 items(viewModel.products) { item ->
-                    Item(item, viewModel)
+                    Item(item, viewModel, navController)
                 }
             }
             if (viewModel.products.isEmpty()) {
@@ -184,13 +176,28 @@ fun MainView(navController: NavController, viewModel: MainViewModel = hiltViewMo
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class,
-    ExperimentalFoundationApi::class
-)
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
 @Composable
-private fun Item(product: Product, viewModel: MainViewModel) {
+private fun Item(product: Product, viewModel: MainViewModel, navController: NavController) {
     var isLongPress by remember {
         mutableStateOf(false)
+    }
+    var detailsIsVisible by remember {
+        mutableStateOf(false)
+    }
+    var deleteIsVisible by remember {
+        mutableStateOf(false)
+    }
+    if (detailsIsVisible) {
+        Details(product = product) {
+            detailsIsVisible = false
+        }
+    }
+    if (deleteIsVisible) {
+        DeleteConfirmation(product = product, viewModel) {
+            deleteIsVisible = false
+        }
     }
     Card(backgroundColor = if (isSystemInDarkTheme()) black else lightMode,
         elevation = 13.dp,
@@ -200,7 +207,7 @@ private fun Item(product: Product, viewModel: MainViewModel) {
             .size(250.dp, 180.dp)
             .combinedClickable(
                 onClick = {
-                    viewModel.selectProduct(product)
+                    detailsIsVisible = true
                 },
                 onLongClick = {
                     isLongPress = !isLongPress
@@ -232,10 +239,13 @@ private fun Item(product: Product, viewModel: MainViewModel) {
             ) {
                 Text(
                     text = product.nombre,
+                    overflow = TextOverflow.Ellipsis,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isSystemInDarkTheme()) darkMode else lightMode,
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 5.dp)
                 )
             }
         }
@@ -273,7 +283,9 @@ private fun Item(product: Product, viewModel: MainViewModel) {
             ) {
                 Column {
                     Button(
-                        onClick = { /*TODO*/ },
+                        onClick = {
+                            deleteIsVisible = true
+                        },
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = red
@@ -289,7 +301,9 @@ private fun Item(product: Product, viewModel: MainViewModel) {
                     }
                     Spacer(modifier = Modifier.height(50.dp))
                     Button(
-                        onClick = { /*TODO*/ },
+                        onClick = {
+                            viewModel.navigateToUpdate(product.id_prod, navController)
+                        },
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = jade
@@ -310,21 +324,27 @@ private fun Item(product: Product, viewModel: MainViewModel) {
 }
 
 @Composable
-private fun GetDetails(product: Product, viewModel: MainViewModel) {
+private fun Details(product: Product, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = {
-        viewModel.unSelectedProduct()
+        onDismiss()
     }) {
         Surface(
             shape = RoundedCornerShape(15.dp),
-            color = if (isSystemInDarkTheme()) darkMode else lightMode,
-            modifier = Modifier.size(200.dp)
+            color = if (isSystemInDarkTheme()) darkMode else lightMode
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .padding(bottom = 20.dp)
+            ) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = product.nombre,
                     fontSize = 23.sp,
-                    color = if (isSystemInDarkTheme()) greenLight else cian
+                    textAlign = TextAlign.Center,
+                    color = if (isSystemInDarkTheme()) greenLight else cian,
+                    modifier = Modifier
+                        .padding(horizontal = 7.dp)
                 )
                 Divider(
                     color = if (isSystemInDarkTheme()) greenLight else cian,
@@ -354,4 +374,65 @@ private fun GetDetails(product: Product, viewModel: MainViewModel) {
             }
         }
     }
+}
+
+@Composable
+private fun DeleteConfirmation(product: Product, viewModel: MainViewModel, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = {
+            onDismiss()
+        },
+        title = {
+            Text(
+                text = "Confirmación",
+                fontSize = 20.sp,
+                color = if (isSystemInDarkTheme()) greenLight else cian
+            )
+        },
+        text = {
+            Text(
+                text = "¿Está seguro que desea eliminar el producto?",
+                fontSize = 15.sp,
+                color = if (isSystemInDarkTheme()) lightMode else darkMode
+            )
+        },
+        backgroundColor = if (isSystemInDarkTheme()) darkMode else lightMode,
+        contentColor = if (isSystemInDarkTheme()) lightMode else darkMode,
+        confirmButton = {
+            Button(
+                onClick = {
+                    viewModel.deleteProduct(product.id_prod, context)
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color.Unspecified
+                ),
+                elevation = ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp
+                )
+            ) {
+                Text(text = "Eliminar", color = red)
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = { onDismiss() },
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color.Unspecified
+                ),
+                elevation = ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp
+                )
+            ) {
+                Text(
+                    text = "Cancelar",
+                    color = if (isSystemInDarkTheme()) lightMode else darkMode
+                )
+            }
+        },
+        shape = RoundedCornerShape(15.dp)
+    )
 }

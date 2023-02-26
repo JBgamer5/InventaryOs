@@ -1,4 +1,4 @@
-package com.inventaryos.presentation.addItem
+package com.inventaryos.presentation.addProduct
 
 import android.content.Context
 import android.net.Uri
@@ -11,13 +11,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.inventaryos.domain.model.Product
 import com.inventaryos.domain.usecase.product.AddProduct
-import com.inventaryos.ui.navigation.AppScreenNavigation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AddItemViewModel @Inject constructor(
+class AddProductViewModel @Inject constructor(
     private val addProduct: AddProduct
 ) : ViewModel() {
     var tittle by mutableStateOf("")

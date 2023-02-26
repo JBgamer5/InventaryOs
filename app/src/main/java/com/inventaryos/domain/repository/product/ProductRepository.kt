@@ -12,6 +12,9 @@ interface ProductRepository {
     suspend fun addProduct(product: Product, uri: Uri): Boolean
     suspend fun getProducts(): List<Product>
     suspend fun getImage(prodId: String): Any?
+    suspend fun delProduct(prodId: String): Boolean
+    suspend fun getProdById(prodId: String): Product?
+    suspend fun updateProd(product: Product, uri: Uri): Boolean
 }
 
 @Module

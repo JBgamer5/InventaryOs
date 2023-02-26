@@ -1,4 +1,4 @@
-package com.inventaryos.presentation.addItem
+package com.inventaryos.presentation.updateProduct
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
@@ -17,7 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,11 +48,19 @@ import com.journeyapps.barcodescanner.ScanOptions
 @Composable
 private fun Preview() {
     val navController = rememberNavController()
-    AddItemView(navController)
+    val prod = ""
+    UpdateProductView(prod, navController)
 }
 
 @Composable
-fun AddItemView(navController: NavController, viewModel: AddItemViewModel = hiltViewModel()) {
+fun UpdateProductView(
+    prodId: String,
+    navController: NavController,
+    viewModel: UpdateProductViewModel = hiltViewModel()
+) {
+    LaunchedEffect(Unit) {
+        viewModel.loadProduct(prodId)
+    }
     val context = LocalContext.current
     BackHandler {
         viewModel.navigateToMain(navController)
@@ -60,7 +69,9 @@ fun AddItemView(navController: NavController, viewModel: AddItemViewModel = hilt
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.save(context) },
+                onClick = {
+                    viewModel.update(context, navController)
+                },
                 backgroundColor = if (isSystemInDarkTheme()) greenLight else cian,
                 modifier = Modifier
                     .size(70.dp)
@@ -79,7 +90,7 @@ fun AddItemView(navController: NavController, viewModel: AddItemViewModel = hilt
 }
 
 @Composable
-private fun Content(paddingValues: PaddingValues, viewModel: AddItemViewModel) {
+private fun Content(paddingValues: PaddingValues, viewModel: UpdateProductViewModel) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -89,7 +100,7 @@ private fun Content(paddingValues: PaddingValues, viewModel: AddItemViewModel) {
             .padding(top = 20.dp)
     ) {
         Text(
-            text = "Añadir Producto",
+            text = "Editar Producto",
             fontSize = 45.sp,
             fontFamily = Lobster,
             color = if (isSystemInDarkTheme()) greenLight else cian
@@ -224,7 +235,7 @@ private fun Content(paddingValues: PaddingValues, viewModel: AddItemViewModel) {
                     contract = ActivityResultContracts.PickVisualMedia(),
                     onResult = { uri ->
                         if (uri != null) {
-                            viewModel.imageUri = uri.toString()
+                            viewModel.imgUri = uri.toString()
                         }
                     }
                 )
@@ -249,63 +260,30 @@ private fun Content(paddingValues: PaddingValues, viewModel: AddItemViewModel) {
             }
 
             item {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Surface(
-                        color = Color.Unspecified,
-                        elevation = 7.dp,
-                        modifier = Modifier
-                            .padding(top = 10.dp, bottom = 15.dp)
-                    ) {
-                        TextField(
-                            value = viewModel.barCode,
-                            onValueChange = {},
-                            placeholder = {
-                                Text(text = "Presione el boton de escanear")
-                            },
-                            colors = TextFieldDefaults.textFieldColors(
-                                backgroundColor = if (isSystemInDarkTheme()) black else lightMode,
-                                placeholderColor = if (isSystemInDarkTheme()) lightMode.copy(.6f) else darkMode.copy(
-                                    .6f
-                                ),
-                                textColor = if (isSystemInDarkTheme()) lightMode else darkMode,
-                                cursorColor = if (isSystemInDarkTheme()) greenLight else cian,
-                                focusedIndicatorColor = if (isSystemInDarkTheme()) greenLight else cian,
-                                unfocusedIndicatorColor = Color.Unspecified,
-                            ),
-                            readOnly = true
-                        )
-                    }
-                    val scanLauncher =
-                        rememberLauncherForActivityResult(
-                            contract = ScanContract(),
-                            onResult = { result ->
-                                if (!result.contents.isNullOrEmpty()) {
-                                    viewModel.barCode = result.contents
-                                }
-                            })
-                    Button(
-                        onClick = {
-                            scanLauncher.launch(
-                                ScanOptions().setPrompt("Acerque el codigo de barras")
-                                    .setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
-                            )
+                Surface(
+                    color = Color.Unspecified,
+                    elevation = 7.dp,
+                    modifier = Modifier
+                        .padding(top = 10.dp, bottom = 15.dp)
+                ) {
+                    TextField(
+                        value = viewModel.barCode,
+                        onValueChange = {},
+                        placeholder = {
+                            Text(text = "Presione el boton de escanear")
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = if (isSystemInDarkTheme()) greenLight else cian
+                        colors = TextFieldDefaults.textFieldColors(
+                            backgroundColor = if (isSystemInDarkTheme()) black else lightMode,
+                            placeholderColor = if (isSystemInDarkTheme()) lightMode.copy(.6f) else darkMode.copy(
+                                .6f
+                            ),
+                            textColor = if (isSystemInDarkTheme()) lightMode else darkMode,
+                            cursorColor = if (isSystemInDarkTheme()) greenLight else cian,
+                            focusedIndicatorColor = if (isSystemInDarkTheme()) greenLight else cian,
+                            unfocusedIndicatorColor = Color.Unspecified,
                         ),
-                        shape = RoundedCornerShape(10.dp),
-                        elevation = ButtonDefaults.elevation(
-                            defaultElevation = 7.dp,
-                            pressedElevation = 9.dp
-                        ),
-                        modifier = Modifier
-                            .padding(vertical = 10.dp)
-                    ) {
-                        Text(
-                            text = "Escanear Codigo de Barras",
-                            color = if (isSystemInDarkTheme()) darkMode else lightMode
-                        )
-                    }
+                        readOnly = true
+                    )
                 }
             }
         }
@@ -313,7 +291,7 @@ private fun Content(paddingValues: PaddingValues, viewModel: AddItemViewModel) {
 }
 
 @Composable
-private fun ItemPreview(viewModel: AddItemViewModel) {
+private fun ItemPreview(viewModel: UpdateProductViewModel) {
     Card(
         backgroundColor = if (isSystemInDarkTheme()) black else lightMode,
         elevation = 13.dp,
@@ -329,7 +307,7 @@ private fun ItemPreview(viewModel: AddItemViewModel) {
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(viewModel.imageUri.ifBlank { R.drawable.ic_upload_img })
+                    .data(viewModel.imgUri)
                     .placeholder(R.drawable.ic_upload_img)
                     .build(),
                 contentDescription = "image_product",
@@ -351,6 +329,7 @@ private fun ItemPreview(viewModel: AddItemViewModel) {
                     color = if (isSystemInDarkTheme()) darkMode else lightMode,
                     modifier = Modifier
                         .align(Alignment.Center)
+                        .padding(horizontal = 5.dp)
                 )
             }
         }

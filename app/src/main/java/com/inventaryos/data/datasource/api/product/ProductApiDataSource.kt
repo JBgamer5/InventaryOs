@@ -13,6 +13,9 @@ interface ProductApiDataSource {
     suspend fun addProduct(productApiEntity: ProductApiEntity, uri: Uri): Boolean
     suspend fun getProducts(): List<ProductApiEntity>
     suspend fun getImage(prodId: String): Any?
+    suspend fun delProduct(prodId: String): Boolean
+    suspend fun getProdById(prodId: String): ProductApiEntity?
+    suspend fun updateProd(productApiEntity: ProductApiEntity, uri: Uri): Boolean
 
 }
 
