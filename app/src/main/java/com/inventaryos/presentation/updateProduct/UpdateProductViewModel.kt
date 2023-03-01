@@ -36,11 +36,11 @@ class UpdateProductViewModel @Inject constructor(
     fun loadProduct(prodId: String) {
         viewModelScope.launch {
             isLoading = true
-            val prod = getProdById.invoke(prodId)
+            val prod = getProdById(prodId)
             if (prod != null) {
                 tittle = prod.nombre
                 quantity = prod.cantidad
-                val img = getProductImage.invoke(prod.id_prod)
+                val img = getProductImage(prod.id_prod)
                 imgUri = img.toString()
                 barCode = prodId
             }
@@ -51,7 +51,7 @@ class UpdateProductViewModel @Inject constructor(
     fun update(context: Context, navController: NavController) {
         viewModelScope.launch {
             isLoading = true
-            updateProduct.invoke(Product(tittle, quantity, barCode), Uri.parse(imgUri))
+            updateProduct(Product(tittle, quantity, barCode), Uri.parse(imgUri))
             isLoading = false
             Toast.makeText(context, "El producto se ha actualizado con exito", Toast.LENGTH_SHORT)
                 .show()

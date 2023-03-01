@@ -56,8 +56,9 @@ private fun Preview() {
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun MainView(navController: NavController, viewModel: MainViewModel = hiltViewModel()) {
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
-        viewModel.loadProducts()
+        viewModel.init(context)
     }
     Scaffold(topBar = {
         Column(
@@ -116,20 +117,23 @@ fun MainView(navController: NavController, viewModel: MainViewModel = hiltViewMo
             }
         }
     }, floatingActionButton = {
-        FloatingActionButton(
-            onClick = {
-                viewModel.navigateToAddItem(navController)
-            },
-            backgroundColor = if (isSystemInDarkTheme()) greenLight else cian
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = "ic_add_product",
-                tint = if (isSystemInDarkTheme()) darkMode else lightMode,
-                modifier = Modifier
-                    .size(20.dp)
-            )
+        if (viewModel.isAdmin) {
+            FloatingActionButton(
+                onClick = {
+                    viewModel.navigateToAddItem(navController)
+                },
+                backgroundColor = if (isSystemInDarkTheme()) greenLight else cian
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "ic_add_product",
+                    tint = if (isSystemInDarkTheme()) darkMode else lightMode,
+                    modifier = Modifier
+                        .size(20.dp)
+                )
+            }
         }
+
     }, backgroundColor = if (isSystemInDarkTheme()) darkMode else lightMode
     ) {
         val state = rememberPullRefreshState(
@@ -210,7 +214,7 @@ private fun Item(product: Product, viewModel: MainViewModel, navController: NavC
                     detailsIsVisible = true
                 },
                 onLongClick = {
-                    isLongPress = !isLongPress
+                    if (viewModel.isAdmin) isLongPress = !isLongPress
                 }
             )) {
         Column(

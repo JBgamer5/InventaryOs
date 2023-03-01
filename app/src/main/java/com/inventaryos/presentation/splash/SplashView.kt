@@ -24,7 +24,6 @@ import com.inventaryos.R
 import com.inventaryos.ui.navigation.AppScreenNavigation
 import com.inventaryos.ui.theme.*
 import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
 
 @Preview(uiMode = UI_MODE_NIGHT_NO, showSystemUi = true)
 @Preview(uiMode = UI_MODE_NIGHT_YES, showSystemUi = true)
@@ -39,7 +38,7 @@ fun SplashView(navController: NavHostController) {
     LaunchedEffect(Unit) {
         delay(2500)
         navController.popBackStack()
-        navController.navigate(AppScreenNavigation.Main.route)
+        navController.navigate(AppScreenNavigation.Login.route)
     }
     Box(
         modifier = Modifier

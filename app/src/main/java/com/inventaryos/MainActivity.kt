@@ -15,6 +15,7 @@ import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.inventaryos.presentation.addProduct.AddItemView
+import com.inventaryos.presentation.login.LoginView
 import com.inventaryos.presentation.main.MainView
 import com.inventaryos.presentation.splash.SplashView
 import com.inventaryos.presentation.updateProduct.UpdateProductView
@@ -55,7 +56,7 @@ private fun Content() {
         startDestination = AppScreenNavigation.Splash.route
     ) {
         composable(AppScreenNavigation.Splash.route,
-            exitTransition = {
+            popExitTransition = {
                 fadeOut(tween(1000))
             }) {
             SplashView(navController)
@@ -64,6 +65,7 @@ private fun Content() {
             enterTransition = {
                 when (initialState.destination.route) {
                     AppScreenNavigation.Splash.route -> fadeIn(tween(1000))
+                    AppScreenNavigation.Login.route -> fadeIn(tween(1000))
                     else -> null
                 }
             },
@@ -136,6 +138,17 @@ private fun Content() {
                 it.arguments?.getString("prodId") ?: "",
                 navController = navController
             )
+        }
+        composable(
+            AppScreenNavigation.Login.route,
+            popExitTransition = {
+                fadeOut(tween(1000))
+            },
+            enterTransition = {
+                fadeIn(tween(1000))
+            }
+        ) {
+            LoginView(navController = navController)
         }
     }
 }

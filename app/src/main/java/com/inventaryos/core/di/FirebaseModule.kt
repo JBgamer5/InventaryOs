@@ -1,5 +1,7 @@
 package com.inventaryos.core.di
 
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -25,5 +27,11 @@ object FirebaseModule {
     @Provides
     fun provideStorage(): FirebaseStorage {
         return Firebase.storage
+    }
+
+    @Singleton
+    @Provides
+    fun provideAuthentication(): FirebaseAuth {
+        return Firebase.auth
     }
 }

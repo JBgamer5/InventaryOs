@@ -7,10 +7,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.inventaryos.domain.model.Product
+import com.inventaryos.domain.model.User
 import com.inventaryos.domain.usecase.product.DelProduct
 import com.inventaryos.domain.usecase.product.GetProdById
 import com.inventaryos.domain.usecase.product.GetProductImage
 import com.inventaryos.domain.usecase.product.GetProducts
+import com.inventaryos.domain.usecase.user.GetCurrentUser
 import com.inventaryos.ui.navigation.AppScreenNavigation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
@@ -21,16 +23,39 @@ class MainViewModel @Inject constructor(
     private val getProducts: GetProducts,
     private val getProductImage: GetProductImage,
     private val delProduct: DelProduct,
-    private val getProdById: GetProdById
+    private val getProdById: GetProdById,
+    private val getCurrentUser: GetCurrentUser
 ) : ViewModel() {
+    var currentUser: User? by mutableStateOf(null)
+    var isAdmin by mutableStateOf(false)
     var products = mutableStateListOf<Product>()
     var isSearching by mutableStateOf(false)
     var isLoading by mutableStateOf(false)
 
+    fun init(context: Context) {
+        viewModelScope.launch {
+            isLoading = true
+            currentUser = getCurrentUser()
+            if (currentUser != null) {
+                currentUser?.let {
+                    isAdmin = it.admin
+                }
+                loadProducts()
+            } else {
+                Toast.makeText(
+                    context,
+                    "Ha ocurrido un error en la conexion, reintente mas tarde",
+                    Toast.LENGTH_SHORT
+                )
+                    .show()
+            }
+        }
+    }
+
     fun loadProducts() {
         viewModelScope.launch {
             isLoading = true
-            products = getProducts.invoke().asReversed().toMutableStateList()
+            products = getProducts().asReversed().toMutableStateList()
             isSearching = false
             isLoading = false
         }
@@ -41,7 +66,7 @@ class MainViewModel @Inject constructor(
             isLoading = true
             isSearching = true
             products.clear()
-            val prod = getProdById.invoke(prodId)
+            val prod = getProdById(prodId)
             if (prod != null) {
                 products.add(prod)
             }
@@ -54,13 +79,13 @@ class MainViewModel @Inject constructor(
     }
 
     suspend fun getProdImg(prodId: String): Any? {
-        return getProductImage.invoke(prodId)
+        return getProductImage(prodId)
     }
 
     fun deleteProduct(prodId: String, context: Context) {
         viewModelScope.launch {
             isLoading = true
-            delProduct.invoke(prodId)
+            delProduct(prodId)
             isLoading = false
             Toast.makeText(context, "El producto se ha eliminado con exito", Toast.LENGTH_SHORT)
                 .show()

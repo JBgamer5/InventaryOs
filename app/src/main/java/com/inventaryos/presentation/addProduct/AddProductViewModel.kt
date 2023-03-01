@@ -29,7 +29,7 @@ class AddProductViewModel @Inject constructor(
         viewModelScope.launch {
             isLoading = true
             if (tittle.isNotBlank() && imageUri.isNotBlank() && barCode.isNotBlank() && quantity != 0) {
-                if (addProduct.invoke(Product(tittle, quantity, barCode), Uri.parse(imageUri))) {
+                if (addProduct(Product(tittle, quantity, barCode), Uri.parse(imageUri))) {
                     Toast.makeText(context,"Producto agregado con exito",Toast.LENGTH_SHORT).show()
                     clear()
                 }else{
